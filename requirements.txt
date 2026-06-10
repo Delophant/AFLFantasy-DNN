@@ -1,0 +1,18 @@
+# Core numerical / data stack
+numpy>=1.26
+pandas>=2.2
+scikit-learn>=1.5
+matplotlib>=3.9
+
+# Deep learning (TensorFlow ships Keras 3). Pinned to a Python 3.12-compatible release.
+tensorflow>=2.21,<2.22
+
+# Notebooks for interactive learning
+jupyter>=1.1
+ipykernel>=6.29
+
+# Data sourcing / scraping (used in the data step)
+requests>=2.32
+beautifulsoup4>=4.12
+lxml>=5.0
+html5lib>=1.1

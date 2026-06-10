@@ -1,0 +1,25 @@
+# Virtual environment
+.venv/
+venv/
+env/
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.ipynb_checkpoints/
+
+# Data (large / regenerable). Keep small sample/processed files only if you choose.
+data/raw/*
+!data/raw/.gitkeep
+data/processed/*
+!data/processed/.gitkeep
+
+# Trained models / artifacts
+models/*
+!models/.gitkeep
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
