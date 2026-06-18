@@ -59,8 +59,7 @@ python src\features.py                      # 3. leakage-free feature table
 python src\train_regressor.py               # 4. baselines vs linear vs neural net
 python src\autoencoder.py                   # 5. archetype discovery (deliverable #1)
 python src\sequence_model.py                # 6. LSTM form/anomaly detection (deliverable #2)
-python src\predict_upcoming.py              # 7. predict upcoming round (after refreshing data)
-python src\predict_upcoming.py 2026-06-14   # optional: specific date (YYYY-MM-DD)
+python src\predict_upcoming.py              # 7. predict next round (see weekly workflow below)
 ```
 
 Or read the whole story interactively in **`notebooks/afl_fantasy_dnn.ipynb`** (consumes the
@@ -72,9 +71,40 @@ TensorFlow's latest stable release supports Python 3.10–3.13 only — there is
 build for Python 3.14 yet. We pin to 3.12 (the well-tested sweet spot) inside a virtual
 environment so the system Python stays untouched and the project stays reproducible.
 
-## Refresh 2026 data from footywire
-.\.venv\Scripts\python.exe -u -c "import sys; sys.path.insert(0,'src'); import pandas as pd; from scrape_footywire import scrape_season, PROCESSED_DIR; s=scrape_season(2026); old=pd.read_csv(PROCESSED_DIR/'player_match_stats.csv', parse_dates=['date']); old=old[old.season<2026]; pd.concat([old,s]).to_csv(PROCESSED_DIR/'player_match_stats.csv', index=False)"
+## Weekly workflow (PC)
 
-##Put match details in MANUAL_FIXTURES variable then run script specifying day
+Run from the repo root each week before games. Fixtures come from Squiggle automatically;
+predictions are written to `web/data/predictions/` and the web index reads `manifest.json`.
 
-.\.venv\Scripts\python.exe src\predict_upcoming.py 2026-06-19
+```powershell
+# 1. Refresh player stats through the current season (include current year)
+.\.venv\Scripts\python.exe src\scrape_footywire.py 2021 2026
+
+# 2. Predict the next unplayed round (halts if that round is already done)
+.\.venv\Scripts\python.exe src\predict_upcoming.py
+
+# 3. Publish CSVs + manifest to the Raspberry Pi
+.\scripts\publish-predictions.ps1
+```
+
+Or combine predict + publish:
+
+```powershell
+.\.venv\Scripts\python.exe src\predict_upcoming.py --deploy
+```
+
+To regenerate a round that was already predicted:
+
+```powershell
+.\.venv\Scripts\python.exe src\predict_upcoming.py --force
+```
+
+Preview the site locally:
+
+```powershell
+.\.venv\Scripts\python.exe -m web
+```
+
+Then open http://localhost:8001
+
+RPi setup and deploy are documented in **`RPI_DEPLOY_CHECKLIST.md`**.

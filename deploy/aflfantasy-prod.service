@@ -1,0 +1,18 @@
+[Unit]
+Description=AFL Fantasy Predictions web app
+After=network.target
+
+[Service]
+Type=simple
+User=delophant
+Group=delophant
+WorkingDirectory=/srv/aflfantasy/prod
+ExecStart=/srv/aflfantasy/prod/.venv/bin/python -m web
+Restart=always
+RestartSec=5
+Environment=AFLFANTASY_HOST=127.0.0.1
+Environment=AFLFANTASY_PORT=8001
+Environment=AFLFANTASY_RELOAD=0
+
+[Install]
+WantedBy=multi-user.target

@@ -1,13 +1,57 @@
 {
-  "last_updated": "2026-06-18T22:00:00",
+  "last_updated": "2026-06-18T23:25:44+10:00",
+  "prediction_batch": {
+    "round": 15,
+    "roundname": "Round 15"
+  },
   "games": [
     {
-      "filename": "round15_fremantle_vs_geelong.csv",
-      "home": "Fremantle",
-      "away": "Geelong",
+      "filename": "round15_adelaide_vs_melbourne.csv",
+      "home": "Adelaide",
+      "away": "Melbourne",
       "round": "Round 15",
-      "venue": "TBC",
-      "predicted_at": "2026-06-18T22:00:00"
+      "venue": "Adelaide Oval",
+      "predicted_at": "2026-06-18T23:24:44+10:00"
+    },
+    {
+      "filename": "round15_collingwood_vs_port_adelaide.csv",
+      "home": "Collingwood",
+      "away": "Port Adelaide",
+      "round": "Round 15",
+      "venue": "M.C.G.",
+      "predicted_at": "2026-06-18T23:24:44+10:00"
+    },
+    {
+      "filename": "round15_gold_coast_vs_hawthorn.csv",
+      "home": "Gold Coast",
+      "away": "Hawthorn",
+      "round": "Round 15",
+      "venue": "Carrara",
+      "predicted_at": "2026-06-18T23:24:44+10:00"
+    },
+    {
+      "filename": "round15_gws_vs_carlton.csv",
+      "home": "GWS",
+      "away": "Carlton",
+      "round": "Round 15",
+      "venue": "Sydney Showground",
+      "predicted_at": "2026-06-18T23:24:44+10:00"
+    },
+    {
+      "filename": "round15_richmond_vs_north_melbourne.csv",
+      "home": "Richmond",
+      "away": "North Melbourne",
+      "round": "Round 15",
+      "venue": "M.C.G.",
+      "predicted_at": "2026-06-18T23:24:44+10:00"
+    },
+    {
+      "filename": "round15_st_kilda_vs_western_bulldogs.csv",
+      "home": "St Kilda",
+      "away": "Western Bulldogs",
+      "round": "Round 15",
+      "venue": "Docklands",
+      "predicted_at": "2026-06-18T23:24:44+10:00"
     }
   ]
 }
