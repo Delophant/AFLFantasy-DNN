@@ -48,7 +48,7 @@ HEADERS = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/
 # Team names must match FootyWire spelling in player_match_stats.csv.
 MANUAL_FIXTURES: dict[date, list[dict]] = {
     date(2026, 6, 19): [
-        {"home": "Gold Coast", "away": "Hawthorn", "round": "Round 15", "venue": "People's First Stadium"},
+        {"home": "Fremantle", "away": "Geelong", "round": "Round 15", "venue": "Perth Stadium"},
     ],
 }
 
