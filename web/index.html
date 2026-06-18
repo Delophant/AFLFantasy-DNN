@@ -71,57 +71,26 @@
       margin: 0 auto;
       padding: 1.5rem clamp(1rem, 3vw, 1.5rem);
     }
-    .actions-hero {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
+    .page-hero {
       text-align: center;
       margin-bottom: 2rem;
       padding-bottom: 1.5rem;
       border-bottom: 1px solid var(--border);
     }
-    .actions-row {
-      display: flex;
-      flex-wrap: wrap;
-      align-items: flex-start;
-      justify-content: center;
-      gap: 1rem 1.25rem;
-      width: 100%;
-      max-width: 520px;
-    }
-    .btn-stub {
-      font: inherit;
-      font-size: 0.95rem;
+    .page-heading {
+      margin: 0;
+      font-size: clamp(1.15rem, 4.5vw, 1.55rem);
       font-weight: 700;
-      min-height: 48px;
-      padding: 0.55rem 1.35rem;
-      border-radius: 8px;
-      cursor: not-allowed;
-      opacity: 0.55;
-      white-space: nowrap;
-    }
-    .btn-stub.btn-primary {
-      border: 1px solid var(--accent);
-      background: var(--accent-dim);
-      color: var(--accent);
-      box-shadow: 0 0 0 1px rgba(110, 207, 143, 0.2), 0 0 14px rgba(110, 207, 143, 0.15);
-    }
-    .btn-stub.btn-secondary {
-      border: 1px solid var(--border);
-      background: #101914;
-      color: var(--fg);
-      min-width: 11rem;
-    }
-    .refresh-col {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 0.35rem;
+      line-height: 1.35;
+      letter-spacing: 0.01em;
+      color: #FFD300;
+      text-wrap: balance;
     }
     #last-updated {
       font-size: 0.76rem;
       color: var(--muted);
       opacity: 0.85;
+      margin-top: 0.65rem;
       min-height: 1.1rem;
     }
     #status {
@@ -177,13 +146,6 @@
       padding: 2.5rem 0;
       text-align: center;
     }
-    @media (max-width: 480px) {
-      .actions-row {
-        flex-direction: column;
-        align-items: center;
-      }
-      .btn-stub { width: 100%; max-width: 280px; }
-    }
     @media (prefers-reduced-motion: reduce) {
       *, *::before, *::after {
         animation-duration: 0.01ms !important;
@@ -201,18 +163,9 @@
   </nav>
 
   <main class="main">
-    <section class="actions-hero" aria-label="Actions">
-      <div class="actions-row">
-        <button type="button" class="btn-stub btn-primary" disabled title="Coming soon">
-          Crank out a prediction
-        </button>
-        <div class="refresh-col">
-          <button type="button" class="btn-stub btn-secondary" disabled title="Coming soon">
-            Refresh Data
-          </button>
-          <div id="last-updated"></div>
-        </div>
-      </div>
+    <section class="page-hero">
+      <h1 class="page-heading">AFL Fantasy Autoencoder Predictive Model</h1>
+      <div id="last-updated"></div>
       <div id="status" role="status" aria-live="polite"></div>
     </section>
     <div id="content"></div>
