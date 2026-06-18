@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>AFL Predictions</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #060807;
+      --fg: #eafff2;
+      --muted: #8bb79a;
+      --border: #1f5c3e;
+      --accent: #6ecf8f;
+      --accent-dim: rgba(110, 207, 143, 0.14);
+      --danger: #ff4f78;
+      --panel: #0d1210;
+      --text-sm: 0.85rem;
+      --text-md: 0.95rem;
+    }
+    * { box-sizing: border-box; }
+    body {
+      font-family: "Segoe UI", Roboto, sans-serif;
+      background: radial-gradient(circle at top, #0f1d16 0%, var(--bg) 45%);
+      color: var(--fg);
+      line-height: 1.55;
+      font-size: var(--text-md);
+      margin: 0;
+      min-height: 100vh;
+    }
+    a, button { transition: all 0.18s ease; }
+    .nav {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0 1rem;
+      min-height: 48px;
+      border-bottom: 1px solid var(--border);
+      background: #0b120f;
+      box-shadow: inset 0 -1px 0 #123a27;
+    }
+    .home-icon {
+      width: 1.9rem;
+      height: 1.9rem;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--accent);
+      background: #0f1713;
+      text-decoration: none;
+      flex-shrink: 0;
+    }
+    .home-icon:hover {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 1px rgba(110, 207, 143, 0.22);
+    }
+    .home-icon svg { width: 1rem; height: 1rem; display: block; fill: currentColor; }
+    .nav-title {
+      font-weight: 700;
+      font-size: 0.95rem;
+      color: var(--accent);
+      letter-spacing: 0.02em;
+    }
+    .main {
+      max-width: 680px;
+      margin: 0 auto;
+      padding: 1.5rem clamp(1rem, 3vw, 1.5rem);
+    }
+    .actions-hero {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      margin-bottom: 2rem;
+      padding-bottom: 1.5rem;
+      border-bottom: 1px solid var(--border);
+    }
+    .actions-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: flex-start;
+      justify-content: center;
+      gap: 1rem 1.25rem;
+      width: 100%;
+      max-width: 520px;
+    }
+    .btn-stub {
+      font: inherit;
+      font-size: 0.95rem;
+      font-weight: 700;
+      min-height: 48px;
+      padding: 0.55rem 1.35rem;
+      border-radius: 8px;
+      cursor: not-allowed;
+      opacity: 0.55;
+      white-space: nowrap;
+    }
+    .btn-stub.btn-primary {
+      border: 1px solid var(--accent);
+      background: var(--accent-dim);
+      color: var(--accent);
+      box-shadow: 0 0 0 1px rgba(110, 207, 143, 0.2), 0 0 14px rgba(110, 207, 143, 0.15);
+    }
+    .btn-stub.btn-secondary {
+      border: 1px solid var(--border);
+      background: #101914;
+      color: var(--fg);
+      min-width: 11rem;
+    }
+    .refresh-col {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.35rem;
+    }
+    #last-updated {
+      font-size: 0.76rem;
+      color: var(--muted);
+      opacity: 0.85;
+      min-height: 1.1rem;
+    }
+    #status {
+      font-size: 0.82rem;
+      color: var(--muted);
+      margin-top: 0.85rem;
+      min-height: 0;
+    }
+    #status:empty { display: none; }
+    #status.err { color: var(--danger); display: block; }
+    .round-group { margin-bottom: 1.75rem; }
+    .round-header {
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      color: var(--muted);
+      margin: 0 0 0.6rem;
+      padding-bottom: 0.35rem;
+      border-bottom: 1px solid var(--border);
+    }
+    .game-list {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 0.45rem;
+    }
+    .game-card {
+      display: flex;
+      align-items: center;
+      padding: 0.75rem 1rem;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: #0b120f;
+      box-shadow: 0 0 0 1px rgba(31, 92, 62, 0.35);
+      text-decoration: none;
+      color: var(--accent);
+      font-weight: 650;
+      font-size: 0.97rem;
+    }
+    .game-card:hover {
+      background: var(--accent-dim);
+      box-shadow: 0 0 0 1px rgba(110, 207, 143, 0.32), 0 0 18px rgba(110, 207, 143, 0.14);
+      border-color: rgba(110, 207, 143, 0.5);
+    }
+    .game-card:active { transform: translateY(1px); }
+    .game-arrow { margin-left: auto; color: var(--muted); font-size: 1.1rem; }
+    .empty {
+      color: var(--muted);
+      font-size: 0.9rem;
+      padding: 2.5rem 0;
+      text-align: center;
+    }
+    @media (max-width: 480px) {
+      .actions-row {
+        flex-direction: column;
+        align-items: center;
+      }
+      .btn-stub { width: 100%; max-width: 280px; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        transition-duration: 0.01ms !important;
+      }
+    }
+  </style>
+</head>
+<body>
+  <nav class="nav" aria-label="Site navigation">
+    <a href="https://www.delophant.xyz" class="home-icon" aria-label="Home" title="Home">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 2.5 10.4l1.3 1.6L5.5 10.7V21h5.7v-5.4h1.6V21H18.5V10.7l1.7 1.3 1.3-1.6L12 3z"/></svg>
+    </a>
+    <span class="nav-title">AFL Predictions</span>
+  </nav>
+
+  <main class="main">
+    <section class="actions-hero" aria-label="Actions">
+      <div class="actions-row">
+        <button type="button" class="btn-stub btn-primary" disabled title="Coming soon">
+          Crank out a prediction
+        </button>
+        <div class="refresh-col">
+          <button type="button" class="btn-stub btn-secondary" disabled title="Coming soon">
+            Refresh Data
+          </button>
+          <div id="last-updated"></div>
+        </div>
+      </div>
+      <div id="status" role="status" aria-live="polite"></div>
+    </section>
+    <div id="content"></div>
+  </main>
+
+  <script>
+    const STALE_DAYS = 21;
+    const statusEl = document.getElementById("status");
+    const contentEl = document.getElementById("content");
+    const lastUpdatedEl = document.getElementById("last-updated");
+
+    function esc(s) {
+      const d = document.createElement("div");
+      d.textContent = s ?? "";
+      return d.innerHTML;
+    }
+
+    function isRecent(predictedAt) {
+      if (!predictedAt) return true;
+      const cutoff = Date.now() - STALE_DAYS * 24 * 60 * 60 * 1000;
+      return new Date(predictedAt).getTime() >= cutoff;
+    }
+
+    function setLastUpdated(iso) {
+      if (!iso) {
+        lastUpdatedEl.textContent = "";
+        return;
+      }
+      try {
+        const dt = new Date(iso);
+        lastUpdatedEl.textContent = "Last updated: " + dt.toLocaleString("en-AU", {
+          day: "numeric", month: "short", year: "numeric",
+          hour: "2-digit", minute: "2-digit",
+        });
+      } catch (_) {
+        lastUpdatedEl.textContent = "Last updated: " + iso;
+      }
+    }
+
+    async function loadManifest() {
+      statusEl.textContent = "";
+      statusEl.className = "";
+      try {
+        const res = await fetch("/data/predictions/manifest.json");
+        if (!res.ok) throw new Error("manifest.json not found (HTTP " + res.status + ")");
+        const data = await res.json();
+        setLastUpdated(data.last_updated);
+
+        const games = (data.games || []).filter(g => isRecent(g.predicted_at));
+
+        if (!games.length) {
+          contentEl.innerHTML = '<p class="empty">No predictions available for the current window.</p>';
+          return;
+        }
+
+        const roundMap = new Map();
+        for (const g of games) {
+          const r = g.round || "Unknown Round";
+          if (!roundMap.has(r)) roundMap.set(r, []);
+          roundMap.get(r).push(g);
+        }
+
+        const parts = [];
+        for (const [round, roundGames] of roundMap) {
+          const items = roundGames.map(g => {
+            const params = new URLSearchParams({
+              file: g.filename,
+              home: g.home,
+              away: g.away,
+              round: g.round || "",
+              venue: g.venue || "",
+            });
+            return `<li>
+              <a class="game-card" href="/game?${params.toString()}">
+                ${esc(g.home + " vs " + g.away)}
+                <span class="game-arrow">›</span>
+              </a>
+            </li>`;
+          }).join("");
+          parts.push(`
+            <section class="round-group">
+              <h2 class="round-header">${esc(round)}</h2>
+              <ul class="game-list">${items}</ul>
+            </section>`);
+        }
+
+        contentEl.innerHTML = parts.join("");
+      } catch (e) {
+        statusEl.className = "err";
+        statusEl.textContent = String(e);
+        contentEl.innerHTML = '<p class="empty">Could not load predictions.</p>';
+      }
+    }
+
+    loadManifest();
+  </script>
+</body>
+</html>

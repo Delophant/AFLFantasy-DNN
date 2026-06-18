@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>AFL Predictions — Game</title>
+  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #060807;
+      --fg: #eafff2;
+      --muted: #8bb79a;
+      --border: #1f5c3e;
+      --accent: #6ecf8f;
+      --accent-dim: rgba(110, 207, 143, 0.14);
+      --danger: #ff4f78;
+      --panel: #0d1210;
+      --pos: rgba(110, 207, 143, 0.18);
+      --neg: rgba(255, 79, 120, 0.14);
+      --text-sm: 0.85rem;
+      --text-md: 0.95rem;
+    }
+    * { box-sizing: border-box; }
+    body {
+      font-family: "Segoe UI", Roboto, sans-serif;
+      background: radial-gradient(circle at top, #0f1d16 0%, var(--bg) 45%);
+      color: var(--fg);
+      line-height: 1.55;
+      font-size: var(--text-md);
+      margin: 0;
+      min-height: 100vh;
+    }
+    a, button { transition: all 0.18s ease; }
+    .nav {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0 1rem;
+      min-height: 48px;
+      border-bottom: 1px solid var(--border);
+      background: #0b120f;
+      box-shadow: inset 0 -1px 0 #123a27;
+    }
+    .back-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+      font: inherit;
+      font-size: 0.88rem;
+      font-weight: 600;
+      padding: 0.25rem 0.65rem;
+      min-height: 34px;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      background: #101914;
+      color: var(--accent);
+      text-decoration: none;
+      flex-shrink: 0;
+    }
+    .back-btn:hover { background: var(--accent-dim); }
+    .back-btn:active { transform: translateY(1px); }
+    .nav-title {
+      font-weight: 700;
+      font-size: 0.95rem;
+      color: var(--fg);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .main {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 1.5rem clamp(1rem, 3vw, 1.5rem);
+    }
+    .match-header {
+      margin-bottom: 1.5rem;
+      padding-bottom: 1rem;
+      border-bottom: 1px solid var(--border);
+    }
+    .match-title {
+      font-size: clamp(1.15rem, 3vw, 1.5rem);
+      font-weight: 700;
+      color: var(--accent);
+      margin: 0 0 0.4rem;
+    }
+    .match-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem 1.25rem;
+      font-size: 0.82rem;
+      color: var(--muted);
+    }
+    #status {
+      font-size: 0.82rem;
+      color: var(--muted);
+      margin-bottom: 1rem;
+      min-height: 1.1rem;
+    }
+    #status.err { color: var(--danger); }
+    .table-wrap {
+      overflow-x: auto;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: #090d0b;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.88rem;
+    }
+    thead tr {
+      background: #0d150f;
+      border-bottom: 1px solid var(--border);
+    }
+    th {
+      padding: 0.6rem 0.8rem;
+      text-align: left;
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--muted);
+      white-space: nowrap;
+      cursor: pointer;
+      user-select: none;
+    }
+    th:hover { color: var(--accent); }
+    th.sorted-asc::after { content: " ▲"; color: var(--accent); font-size: 0.65rem; }
+    th.sorted-desc::after { content: " ▼"; color: var(--accent); font-size: 0.65rem; }
+    td {
+      padding: 0.5rem 0.8rem;
+      border-bottom: 1px solid rgba(31, 92, 62, 0.3);
+      white-space: nowrap;
+    }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: rgba(110, 207, 143, 0.05); }
+    .player-name { font-weight: 600; color: var(--fg); white-space: normal; min-width: 130px; }
+    .team-badge {
+      font-size: 0.75rem;
+      font-weight: 600;
+      padding: 0.15rem 0.45rem;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      color: var(--muted);
+    }
+    .ha-home { color: var(--accent); font-size: 0.75rem; font-weight: 700; text-transform: uppercase; }
+    .ha-away { color: var(--muted); font-size: 0.75rem; font-weight: 700; text-transform: uppercase; }
+    .num { text-align: right; font-variant-numeric: tabular-nums; }
+    .score-pred { font-weight: 700; color: var(--accent); }
+    .delta-pos {
+      font-weight: 600;
+      color: #6ecf8f;
+      background: var(--pos);
+      border-radius: 4px;
+      padding: 0.1rem 0.35rem;
+      display: inline-block;
+    }
+    .delta-neg {
+      font-weight: 600;
+      color: #ff8fa8;
+      background: var(--neg);
+      border-radius: 4px;
+      padding: 0.1rem 0.35rem;
+      display: inline-block;
+    }
+    .delta-zero { color: var(--muted); }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        transition-duration: 0.01ms !important;
+      }
+    }
+  </style>
+</head>
+<body>
+  <nav class="nav" aria-label="Site navigation">
+    <a href="/" class="back-btn">← Predictions</a>
+    <span class="nav-title" id="nav-title">Game</span>
+  </nav>
+
+  <main class="main">
+    <header class="match-header">
+      <h1 class="match-title" id="match-title">Loading…</h1>
+      <div class="match-meta" id="match-meta"></div>
+    </header>
+    <div id="status" role="status" aria-live="polite">Loading predictions…</div>
+    <div class="table-wrap" id="table-wrap" style="display:none">
+      <table id="pred-table">
+        <thead>
+          <tr>
+            <th data-col="player">Player</th>
+            <th data-col="team">Team</th>
+            <th data-col="home_away">H/A</th>
+            <th data-col="games_2026" class="num">Games</th>
+            <th data-col="recent5_avg" class="num">Recent Avg</th>
+            <th data-col="predicted_fantasy" class="num sorted-desc">Predicted</th>
+            <th data-col="delta_vs_recent" class="num">vs Recent</th>
+          </tr>
+        </thead>
+        <tbody id="pred-tbody"></tbody>
+      </table>
+    </div>
+  </main>
+
+  <script>
+    const params = new URLSearchParams(location.search);
+    const file  = params.get("file")  || "";
+    const home  = params.get("home")  || "";
+    const away  = params.get("away")  || "";
+    const round = params.get("round") || "";
+    const venue = params.get("venue") || "";
+
+    const matchLabel = home && away ? home + " vs " + away : file;
+    document.title = "AFL Predictions — " + matchLabel;
+    document.getElementById("nav-title").textContent = matchLabel;
+    document.getElementById("match-title").textContent = matchLabel;
+
+    const metaEl = document.getElementById("match-meta");
+    [round, venue].filter(Boolean).forEach(p => {
+      const span = document.createElement("span");
+      span.textContent = p;
+      metaEl.appendChild(span);
+    });
+
+    const statusEl  = document.getElementById("status");
+    const tableWrap = document.getElementById("table-wrap");
+    const tbody     = document.getElementById("pred-tbody");
+
+    let tableData = [];
+    let sortCol   = "predicted_fantasy";
+    let sortDir   = "desc";
+
+    const NUM_COLS = new Set(["games_2026", "recent5_avg", "predicted_fantasy", "delta_vs_recent"]);
+
+    function renderDelta(val) {
+      const n = parseFloat(val);
+      if (isNaN(n)) return `<td class="num"><span class="delta-zero">—</span></td>`;
+      const sign = n > 0 ? "+" : "";
+      const cls  = n > 0 ? "delta-pos" : n < 0 ? "delta-neg" : "delta-zero";
+      return `<td class="num"><span class="${cls}">${sign}${n.toFixed(1)}</span></td>`;
+    }
+
+    function renderRow(row) {
+      const ha     = (row.home_away || "").toLowerCase();
+      const haCls  = ha === "home" ? "ha-home" : "ha-away";
+      const haText = ha === "home" ? "Home" : ha === "away" ? "Away" : ha || "—";
+      const pred   = parseFloat(row.predicted_fantasy);
+      const avg    = parseFloat(row.recent5_avg);
+      return `<tr>
+        <td class="player-name">${row.player || "—"}</td>
+        <td><span class="team-badge">${row.team || "—"}</span></td>
+        <td><span class="${haCls}">${haText}</span></td>
+        <td class="num">${row.games_2026 || "—"}</td>
+        <td class="num">${isNaN(avg)  ? "—" : avg.toFixed(1)}</td>
+        <td class="num score-pred">${isNaN(pred) ? "—" : pred.toFixed(1)}</td>
+        ${renderDelta(row.delta_vs_recent)}
+      </tr>`;
+    }
+
+    function renderTable() {
+      const sorted = [...tableData].sort((a, b) => {
+        const av = NUM_COLS.has(sortCol) ? (parseFloat(a[sortCol]) || 0) : (a[sortCol] || "");
+        const bv = NUM_COLS.has(sortCol) ? (parseFloat(b[sortCol]) || 0) : (b[sortCol] || "");
+        if (av < bv) return sortDir === "asc" ? -1 : 1;
+        if (av > bv) return sortDir === "asc" ? 1  : -1;
+        return 0;
+      });
+      tbody.innerHTML = sorted.map(renderRow).join("");
+    }
+
+    document.querySelectorAll("th[data-col]").forEach(th => {
+      th.addEventListener("click", () => {
+        const col = th.getAttribute("data-col");
+        if (sortCol === col) {
+          sortDir = sortDir === "asc" ? "desc" : "asc";
+        } else {
+          sortCol = col;
+          sortDir = NUM_COLS.has(col) ? "desc" : "asc";
+        }
+        document.querySelectorAll("th[data-col]").forEach(t =>
+          t.classList.remove("sorted-asc", "sorted-desc"));
+        th.classList.add(sortDir === "asc" ? "sorted-asc" : "sorted-desc");
+        renderTable();
+      });
+    });
+
+    async function loadCsv() {
+      if (!file) {
+        statusEl.className = "err";
+        statusEl.textContent = "No file specified in URL.";
+        return;
+      }
+      statusEl.textContent = "Loading…";
+      try {
+        const res = await fetch("/data/predictions/" + encodeURIComponent(file));
+        if (!res.ok) throw new Error("HTTP " + res.status);
+        const text   = await res.text();
+        const result = Papa.parse(text, { header: true, skipEmptyLines: true });
+        tableData = result.data;
+        statusEl.textContent = tableData.length + " players";
+        tableWrap.style.display = "";
+        renderTable();
+      } catch (e) {
+        statusEl.className = "err";
+        statusEl.textContent = "Could not load data: " + String(e);
+      }
+    }
+
+    loadCsv();
+  </script>
+</body>
+</html>
