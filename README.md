@@ -57,6 +57,7 @@ python src\scrape_footywire.py 2021 2025   # 1. scrape -> data/processed/player_
 python src\explore_data.py                  # 2. data sanity checks + figures
 python src\features.py                      # 3. leakage-free feature table
 python src\train_regressor.py               # 4. baselines vs linear vs neural net
+python src\train_predictor.py               # 4b. LightGBM predictor (weekly scores)
 python src\autoencoder.py                   # 5. archetype discovery (deliverable #1)
 python src\sequence_model.py                # 6. LSTM form/anomaly detection (deliverable #2)
 python src\predict_upcoming.py              # 7. predict next round (see weekly workflow below)
@@ -80,8 +81,15 @@ predictions are written to `web/data/predictions/` and the web index reads `mani
 # 1. Refresh player stats through the current season (include current year)
 .\.venv\Scripts\python.exe src\scrape_footywire.py 2021 2026
 
+# 1b. Rebuild feature table + retrain GBM (after scrape, or periodically)
+.\.venv\Scripts\python.exe src\features.py
+.\.venv\Scripts\python.exe src\train_predictor.py
+
 # 2. Predict the next unplayed round (halts if that round is already done)
 .\.venv\Scripts\python.exe src\predict_upcoming.py
+
+# Retrain GBM model first (optional — after new scrape data)
+.\.venv\Scripts\python.exe src\predict_upcoming.py --retrain --force
 
 # 3. Publish CSVs + manifest to the Raspberry Pi
 .\scripts\publish-predictions.ps1

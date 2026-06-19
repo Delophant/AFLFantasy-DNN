@@ -4,6 +4,9 @@ pandas>=2.2
 scikit-learn>=1.5
 matplotlib>=3.9
 
+# Tabular prediction (weekly fantasy scores)
+lightgbm>=4.5
+
 # Deep learning (TensorFlow ships Keras 3). Pinned to a Python 3.12-compatible release.
 tensorflow>=2.21,<2.22
 
