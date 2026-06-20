@@ -131,6 +131,8 @@
     th:hover { color: var(--accent); }
     th.sorted-asc::after { content: " ▲"; color: var(--accent); font-size: 0.65rem; }
     th.sorted-desc::after { content: " ▼"; color: var(--accent); font-size: 0.65rem; }
+    #col-v2 { display: none; }
+    #col-v2.visible { display: table-cell; }
     td {
       padding: 0.5rem 0.8rem;
       border-bottom: 1px solid rgba(31, 92, 62, 0.3);
@@ -298,6 +300,14 @@
       });
     });
 
+    function normalizeRow(row) {
+      const out = {};
+      for (const [k, v] of Object.entries(row)) {
+        out[k.trim()] = v;
+      }
+      return out;
+    }
+
     async function loadCsv() {
       if (!file) {
         statusEl.className = "err";
@@ -306,13 +316,24 @@
       }
       statusEl.textContent = "Loading…";
       try {
-        const res = await fetch("/data/predictions/" + encodeURIComponent(file));
+        const res = await fetch(
+          "/data/predictions/" + encodeURIComponent(file) + "?v=" + Date.now()
+        );
         if (!res.ok) throw new Error("HTTP " + res.status);
         const text   = await res.text();
+        const headerLine = (text.split(/\r?\n/)[0] || "").trim();
+        hasV2 = headerLine.includes("predicted_fantasy_v2");
         const result = Papa.parse(text, { header: true, skipEmptyLines: true });
-        tableData = result.data;
-        hasV2 = tableData.some(r => r.predicted_fantasy_v2 != null && r.predicted_fantasy_v2 !== "");
-        if (hasV2) document.getElementById("col-v2").style.display = "";
+        tableData = result.data.map(normalizeRow);
+        if (!hasV2) {
+          hasV2 = tableData.some(r => {
+            const v = r.predicted_fantasy_v2;
+            return v != null && String(v).trim() !== "";
+          });
+        }
+        const colV2 = document.getElementById("col-v2");
+        if (hasV2) colV2.classList.add("visible");
+        else colV2.classList.remove("visible");
         statusEl.textContent = tableData.length + " players";
         tableWrap.style.display = "";
         renderTable();
