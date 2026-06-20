@@ -29,7 +29,12 @@ import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from fixtures import Fixture, fixtures_dataframe, next_unplayed_round
-from predictor_model import load_artifact, predict_player_scores, train
+from predictor_model import (
+    load_artifact,
+    load_artifact_archetype,
+    predict_player_scores,
+    train_both,
+)
 
 sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 
@@ -61,6 +66,8 @@ def predict_for_match(
     venue: str | None,
     booster,
     meta: dict,
+    booster_v2=None,
+    meta_v2=None,
 ) -> pd.DataFrame:
     squad: list[tuple[str, str, str, str]] = []
     for team, opponent, ha in [(home, away, "home"), (away, home, "away")]:
@@ -68,7 +75,7 @@ def predict_for_match(
             squad.append((player, team, opponent, ha))
 
     rows = predict_player_scores(
-        history, squad, season, venue, match_date, booster, meta
+        history, squad, season, venue, match_date, booster, meta, booster_v2, meta_v2
     )
     if not rows:
         return pd.DataFrame()
@@ -96,6 +103,25 @@ def save_state(state: dict) -> None:
     STATE_PATH.write_text(json.dumps(state, indent=2), encoding="utf-8")
 
 
+def _match_date_from_csv(path: Path) -> str | None:
+    try:
+        df = pd.read_csv(path, nrows=1, usecols=["date"])
+        if not df.empty:
+            return str(pd.to_datetime(df["date"].iloc[0]).isoformat())
+    except (ValueError, KeyError, pd.errors.EmptyDataError):
+        pass
+    return None
+
+
+def _normalize_match_date(value) -> str | None:
+    if value is None:
+        return None
+    try:
+        return pd.to_datetime(value).isoformat()
+    except (TypeError, ValueError):
+        return str(value) if value else None
+
+
 def rebuild_manifest(state: dict, batch_round: int, batch_name: str) -> None:
     cutoff = datetime.now(timezone.utc).astimezone().timestamp() - STALE_DAYS * 86400
     games_meta = []
@@ -117,6 +143,7 @@ def rebuild_manifest(state: dict, batch_round: int, batch_name: str) -> None:
             continue
 
         if meta:
+            match_date = _normalize_match_date(meta.get("match_date")) or _match_date_from_csv(path)
             games_meta.append({
                 "filename": path.name,
                 "home": meta["home"],
@@ -124,6 +151,7 @@ def rebuild_manifest(state: dict, batch_round: int, batch_name: str) -> None:
                 "round": meta.get("round", ""),
                 "venue": meta.get("venue"),
                 "predicted_at": predicted_at,
+                "match_date": match_date,
             })
         else:
             m = path.stem
@@ -141,9 +169,10 @@ def rebuild_manifest(state: dict, batch_round: int, batch_name: str) -> None:
                 "round": f"Round {rnd_m.group(1)}" if rnd_m else "",
                 "venue": None,
                 "predicted_at": predicted_at,
+                "match_date": _match_date_from_csv(path),
             })
 
-    games_meta.sort(key=lambda g: g.get("predicted_at", ""), reverse=True)
+    games_meta.sort(key=lambda g: g.get("match_date") or "")
     manifest = {
         "last_updated": iso_now(),
         "prediction_batch": {"round": batch_round, "roundname": batch_name},
@@ -185,11 +214,17 @@ def main(force: bool = False, deploy: bool = False, retrain: bool = False) -> No
         print("\n--force: regenerating predictions for this round")
 
     if retrain:
-        print("\nretraining GBM predictor...")
-        booster, meta = train(save=True)
+        print("\nretraining base + archetype GBM predictors...")
+        (booster, meta), (booster_v2, meta_v2) = train_both(save=True)
     else:
-        print("\nloading GBM predictor...")
+        print("\nloading GBM predictors...")
         booster, meta = load_artifact()
+        try:
+            booster_v2, meta_v2 = load_artifact_archetype()
+            print("loaded archetype model for predicted_fantasy_v2")
+        except FileNotFoundError:
+            booster_v2 = meta_v2 = None
+            print("archetype model not found — writing predicted_fantasy only")
     print(f"blend roll5 weight: {meta.get('blend_weight_roll5', 0):.2f}")
 
     PREDICTIONS_DIR.mkdir(parents=True, exist_ok=True)
@@ -200,7 +235,7 @@ def main(force: bool = False, deploy: bool = False, retrain: bool = False) -> No
 
     for fix in fixtures:
         preds = predict_for_match(
-            df, fix.home, fix.away, season, fix.date, fix.venue, booster, meta
+            df, fix.home, fix.away, season, fix.date, fix.venue, booster, meta, booster_v2, meta_v2
         )
         preds["match_id"] = fix.match_id
         preds["round"] = fix.round_name
@@ -212,6 +247,7 @@ def main(force: bool = False, deploy: bool = False, retrain: bool = False) -> No
             "round": fix.round_name,
             "venue": fix.venue,
             "predicted_at": predicted_at,
+            "match_date": pd.to_datetime(fix.date).isoformat(),
         }
         all_preds.append(preds)
         print(f"  wrote {out_path.relative_to(ROOT)} ({len(preds)} players)")

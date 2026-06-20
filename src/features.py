@@ -51,6 +51,15 @@ PREDICT_NUMERIC = FEATURES + [
 
 PREDICT_CATEGORICAL = ["team", "opponent", "venue"]
 
+# Archetype-enhanced variant (second GBM)
+ARCHETYPE_NUMERIC = PREDICT_NUMERIC + [
+    "latent_1",
+    "latent_2",
+    "form_trend",
+    "roll5_fantasy_std",
+]
+ARCHETYPE_CATEGORICAL = PREDICT_CATEGORICAL + ["archetype_cluster"]
+
 TARGET = "target"
 RESIDUAL_TARGET = "target_residual"
 MIN_PRIOR_GAMES = 3
@@ -123,6 +132,10 @@ def build_raw_features(df: pd.DataFrame) -> pd.DataFrame:
 
     df["target"] = df["fantasy_points"]
     df["target_residual"] = df["target"] - df["roll5_fantasy"]
+    df["form_trend"] = df["roll3_fantasy"] - df["roll5_fantasy"]
+    df["roll5_fantasy_std"] = by_player["fantasy_points"].transform(
+        lambda s: s.shift(1).rolling(5, min_periods=MIN_PRIOR_GAMES).std()
+    )
     return df
 
 
@@ -130,14 +143,23 @@ def build(min_prior_games: int = MIN_PRIOR_GAMES) -> pd.DataFrame:
     df = pd.read_csv(SRC, parse_dates=["date"])
     df = build_raw_features(df)
 
+    from archetype_features import attach_to_dataframe
+
+    df = attach_to_dataframe(df)
+
     meta = ["season", "date", "player", "team", "opponent", "venue", "home_away", "match_id"]
     meta = [c for c in meta if c in df.columns]
-    predict_cols = meta + PREDICT_NUMERIC + PREDICT_CATEGORICAL + [TARGET, RESIDUAL_TARGET]
+    predict_cols = meta + ARCHETYPE_NUMERIC + ARCHETYPE_CATEGORICAL + [TARGET, RESIDUAL_TARGET]
     model_df = df[predict_cols].copy()
 
-    required = [c for c in PREDICT_NUMERIC if c not in ("player_vs_opponent_avg", "days_since_last_game")]
+    required = [
+        c
+        for c in ARCHETYPE_NUMERIC
+        if c not in ("player_vs_opponent_avg", "days_since_last_game", "roll5_fantasy_std")
+    ]
     before = len(model_df)
     model_df = model_df.dropna(subset=required).reset_index(drop=True)
+    model_df["archetype_cluster"] = model_df["archetype_cluster"].astype(int)
     print(
         f"rows: {before:,} -> {len(model_df):,} after dropping warm-up games "
         f"(need >={min_prior_games} prior games)"
@@ -204,7 +226,9 @@ def build_player_row(
         "player_vs_opponent_avg": player_vs_opp,
         "days_since_last_game": days_since,
     }
-    return row
+    from archetype_features import enrich_player_row
+
+    return enrich_player_row(row, history, player, season, match_date)
 
 
 def main() -> None:
@@ -214,9 +238,9 @@ def main() -> None:
     legacy_cols = ["season", "date", "player", "team", "opponent"] + FEATURES + [TARGET]
     model_df[legacy_cols].to_csv(REGRESSION_OUT, index=False)
 
-    print(f"\nprediction features ({len(PREDICT_NUMERIC)} numeric + {len(PREDICT_CATEGORICAL)} categorical)")
-    print(f"numeric: {PREDICT_NUMERIC}")
-    print(f"categorical: {PREDICT_CATEGORICAL}")
+    print(f"\nprediction features ({len(ARCHETYPE_NUMERIC)} numeric + {len(ARCHETYPE_CATEGORICAL)} categorical)")
+    print(f"numeric: {ARCHETYPE_NUMERIC}")
+    print(f"categorical: {ARCHETYPE_CATEGORICAL}")
     print(f"\nseasons: {sorted(model_df['season'].unique())}")
     print(model_df.groupby("season").size().to_string())
     print(f"\nwrote -> {PREDICTION_OUT.relative_to(ROOT)}")

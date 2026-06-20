@@ -24,9 +24,11 @@ Run:
 
 from __future__ import annotations
 
+import json
 import sys
 from pathlib import Path
 
+import joblib
 import matplotlib
 
 matplotlib.use("Agg")
@@ -44,6 +46,12 @@ ROOT = Path(__file__).resolve().parent.parent
 DATA = ROOT / "data" / "processed" / "player_match_stats.csv"
 OUT = ROOT / "data" / "processed" / "player_archetypes.csv"
 FIG_DIR = ROOT / "reports" / "figures"
+MODEL_DIR = ROOT / "models"
+SCALER_PATH = MODEL_DIR / "archetype_scaler.pkl"
+ENCODER_PATH = MODEL_DIR / "archetype_encoder.keras"
+KMEANS_PATH = MODEL_DIR / "archetype_kmeans.pkl"
+LABELS_PATH = MODEL_DIR / "archetype_labels.json"
+PRIOR_CLUSTER_PATH = MODEL_DIR / "archetype_prior_clusters.json"
 
 # Playing-style features (per-game averages). We omit 'disposals' (= kicks +
 # handballs, redundant) and the fantasy/supercoach scores (derived, not style).
@@ -131,6 +139,25 @@ def main() -> None:
     profiles["archetype"] = profiles["cluster"].map(labels)
     profiles.to_csv(OUT, index=False)
     print(f"\nwrote -> {OUT.relative_to(ROOT)}")
+
+    MODEL_DIR.mkdir(parents=True, exist_ok=True)
+    joblib.dump(scaler, SCALER_PATH)
+    encoder.save(str(ENCODER_PATH))
+    joblib.dump(km, KMEANS_PATH)
+    LABELS_PATH.write_text(json.dumps({str(k): v for k, v in labels.items()}, indent=2), encoding="utf-8")
+    prior = (
+        profiles.sort_values("season")
+        .drop_duplicates("player", keep="last")
+        .set_index("player")["cluster"]
+        .astype(int)
+        .to_dict()
+    )
+    PRIOR_CLUSTER_PATH.write_text(json.dumps(prior, indent=2), encoding="utf-8")
+    print(
+        f"saved inference artifacts -> {MODEL_DIR.relative_to(ROOT)}/\n"
+        f"  {SCALER_PATH.name}, {ENCODER_PATH.name}, {KMEANS_PATH.name}, "
+        f"{LABELS_PATH.name}, {PRIOR_CLUSTER_PATH.name}"
+    )
 
     # ---- Figure 1: the latent archetype map ----
     FIG_DIR.mkdir(parents=True, exist_ok=True)

@@ -1,4 +1,4 @@
-r"""Backtest GBM predictor vs roll5 baseline on held-out rounds.
+r"""Backtest GBM predictors vs roll5 baseline on held-out rounds.
 
 Run:
     .\.venv\Scripts\python.exe src\evaluate_predictor.py
@@ -19,6 +19,7 @@ from features import TARGET
 from predictor_model import (
     TEST_SEASON,
     load_artifact,
+    load_artifact_archetype,
     metrics,
     predict_from_rows,
     top_k_recall_per_match,
@@ -30,8 +31,24 @@ ROOT = Path(__file__).resolve().parent.parent
 DATA = ROOT / "data" / "processed" / "prediction_dataset.csv"
 
 
+def _print_model_block(name: str, actual: np.ndarray, pred: np.ndarray, eval_df: pd.DataFrame, pred_col: str) -> None:
+    m = metrics(actual, pred)
+    print(
+        f"{name:<12}{m['mae']:>8.2f}{m['rmse']:>8.2f}{m['corr']:>8.3f}"
+        f"{pred.max():>8.1f}{pred.std():>8.1f}{(pred > 100).sum():>6}"
+    )
+    print(f"top-20 recall {name}: {top_k_recall_per_match(eval_df, pred_col):.3f}")
+
+
 def evaluate_split(df: pd.DataFrame, label: str) -> None:
     booster, meta = load_artifact()
+    try:
+        booster_v2, meta_v2 = load_artifact_archetype()
+        has_v2 = True
+    except FileNotFoundError:
+        booster_v2 = meta_v2 = None
+        has_v2 = False
+
     rows = df.to_dict("records")
     gbm_pred = predict_from_rows(rows, booster, meta)
     roll5 = df["roll5_fantasy"].to_numpy()
@@ -43,20 +60,21 @@ def evaluate_split(df: pd.DataFrame, label: str) -> None:
 
     print(f"\n=== {label} ({len(df)} players) ===")
     print(f"{'model':<12}{'MAE':>8}{'RMSE':>8}{'corr':>8}{'max':>8}{'std':>8}{'>100':>6}")
-    for name, pred in [("roll5", roll5), ("gbm", gbm_pred)]:
-        m = metrics(actual, pred)
-        print(
-            f"{name:<12}{m['mae']:>8.2f}{m['rmse']:>8.2f}{m['corr']:>8.3f}"
-            f"{pred.max():>8.1f}{pred.std():>8.1f}{(pred > 100).sum():>6}"
-        )
+    _print_model_block("roll5", actual, roll5, eval_df, "roll5_pred")
+    _print_model_block("gbm", actual, gbm_pred, eval_df, "gbm_pred")
 
-    print(f"top-20 recall roll5: {top_k_recall_per_match(eval_df, 'roll5_pred'):.3f}")
-    print(f"top-20 recall gbm:   {top_k_recall_per_match(eval_df, 'gbm_pred'):.3f}")
+    if has_v2:
+        gbm_v2 = predict_from_rows(rows, booster_v2, meta_v2)
+        eval_df["gbm_v2_pred"] = gbm_v2
+        _print_model_block("gbm_v2", actual, gbm_v2, eval_df, "gbm_v2_pred")
 
     print("\nTop 10 actual vs predictions:")
-    show = eval_df.nlargest(10, TARGET)[
-        ["player", "team", "opponent", TARGET, "roll5_fantasy", "gbm_pred"]
-    ].rename(columns={TARGET: "actual", "roll5_fantasy": "roll5", "gbm_pred": "gbm"})
+    cols = ["player", "team", "opponent", TARGET, "roll5_fantasy", "gbm_pred"]
+    rename = {TARGET: "actual", "roll5_fantasy": "roll5", "gbm_pred": "gbm"}
+    if has_v2:
+        cols.append("gbm_v2_pred")
+        rename["gbm_v2_pred"] = "gbm_v2"
+    show = eval_df.nlargest(10, TARGET)[cols].rename(columns=rename)
     print(show.round(1).to_string(index=False))
 
 
@@ -75,7 +93,12 @@ def filter_round(df: pd.DataFrame, season: int, round_num: int) -> pd.DataFrame:
 def main(season: int | None, round_num: int | None) -> None:
     df = pd.read_csv(DATA, parse_dates=["date"])
     booster, meta = load_artifact()
-    print(f"loaded model (blend roll5 weight={meta['blend_weight_roll5']:.2f})")
+    print(f"loaded base model (blend roll5 weight={meta['blend_weight_roll5']:.2f})")
+    try:
+        _, meta_v2 = load_artifact_archetype()
+        print(f"loaded archetype model (blend roll5 weight={meta_v2['blend_weight_roll5']:.2f})")
+    except FileNotFoundError:
+        print("archetype model not found — evaluating base only")
 
     test_df = df[df["season"] == TEST_SEASON]
     evaluate_split(test_df, f"TEST SEASON {TEST_SEASON}")

@@ -133,6 +133,19 @@
       font-weight: 650;
       font-size: 0.97rem;
     }
+    .game-card-body {
+      display: flex;
+      flex-direction: column;
+      gap: 0.15rem;
+      min-width: 0;
+    }
+    .game-date {
+      font-size: 0.72rem;
+      font-weight: 500;
+      color: var(--muted);
+      letter-spacing: 0.02em;
+    }
+    .game-matchup { line-height: 1.25; }
     .game-card:hover {
       background: var(--accent-dim);
       box-shadow: 0 0 0 1px rgba(110, 207, 143, 0.32), 0 0 18px rgba(110, 207, 143, 0.14);
@@ -205,6 +218,24 @@
       }
     }
 
+    function formatMatchDate(iso) {
+      if (!iso) return "";
+      try {
+        const dt = new Date(iso);
+        return dt.toLocaleString("en-AU", {
+          weekday: "short", day: "numeric", month: "short",
+          hour: "2-digit", minute: "2-digit",
+        });
+      } catch (_) {
+        return iso;
+      }
+    }
+
+    function matchSortKey(g) {
+      if (g.match_date) return new Date(g.match_date).getTime();
+      return Number.MAX_SAFE_INTEGER;
+    }
+
     async function loadManifest() {
       statusEl.textContent = "";
       statusEl.className = "";
@@ -230,6 +261,7 @@
 
         const parts = [];
         for (const [round, roundGames] of roundMap) {
+          roundGames.sort((a, b) => matchSortKey(a) - matchSortKey(b));
           const items = roundGames.map(g => {
             const params = new URLSearchParams({
               file: g.filename,
@@ -238,9 +270,15 @@
               round: g.round || "",
               venue: g.venue || "",
             });
+            const dateLine = g.match_date
+              ? `<span class="game-date">${esc(formatMatchDate(g.match_date))}</span>`
+              : "";
             return `<li>
               <a class="game-card" href="/game?${params.toString()}">
-                ${esc(g.home + " vs " + g.away)}
+                <span class="game-card-body">
+                  ${dateLine}
+                  <span class="game-matchup">${esc(g.home + " vs " + g.away)}</span>
+                </span>
                 <span class="game-arrow">›</span>
               </a>
             </li>`;

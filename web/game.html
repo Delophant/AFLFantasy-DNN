@@ -198,6 +198,7 @@
             <th data-col="games_2026" class="num">Games</th>
             <th data-col="recent5_avg" class="num">Recent Avg</th>
             <th data-col="predicted_fantasy" class="num sorted-desc">Predicted</th>
+            <th data-col="predicted_fantasy_v2" class="num" id="col-v2" style="display:none">Predicted v2</th>
             <th data-col="delta_vs_recent" class="num">vs Recent</th>
           </tr>
         </thead>
@@ -234,7 +235,11 @@
     let sortCol   = "predicted_fantasy";
     let sortDir   = "desc";
 
-    const NUM_COLS = new Set(["games_2026", "recent5_avg", "predicted_fantasy", "delta_vs_recent"]);
+    const NUM_COLS = new Set([
+      "games_2026", "recent5_avg", "predicted_fantasy",
+      "predicted_fantasy_v2", "delta_vs_recent", "delta_vs_recent_v2",
+    ]);
+    let hasV2 = false;
 
     function renderDelta(val) {
       const n = parseFloat(val);
@@ -249,7 +254,11 @@
       const haCls  = ha === "home" ? "ha-home" : "ha-away";
       const haText = ha === "home" ? "Home" : ha === "away" ? "Away" : ha || "—";
       const pred   = parseFloat(row.predicted_fantasy);
+      const predV2 = parseFloat(row.predicted_fantasy_v2);
       const avg    = parseFloat(row.recent5_avg);
+      const v2Cell = hasV2
+        ? `<td class="num">${isNaN(predV2) ? "—" : predV2.toFixed(1)}</td>`
+        : "";
       return `<tr>
         <td class="player-name">${row.player || "—"}</td>
         <td><span class="team-badge">${row.team || "—"}</span></td>
@@ -257,6 +266,7 @@
         <td class="num">${row.games_2026 || "—"}</td>
         <td class="num">${isNaN(avg)  ? "—" : avg.toFixed(1)}</td>
         <td class="num score-pred">${isNaN(pred) ? "—" : pred.toFixed(1)}</td>
+        ${v2Cell}
         ${renderDelta(row.delta_vs_recent)}
       </tr>`;
     }
@@ -301,6 +311,8 @@
         const text   = await res.text();
         const result = Papa.parse(text, { header: true, skipEmptyLines: true });
         tableData = result.data;
+        hasV2 = tableData.some(r => r.predicted_fantasy_v2 != null && r.predicted_fantasy_v2 !== "");
+        if (hasV2) document.getElementById("col-v2").style.display = "";
         statusEl.textContent = tableData.length + " players";
         tableWrap.style.display = "";
         renderTable();

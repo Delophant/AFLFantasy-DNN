@@ -1,33 +1,27 @@
 {
-  "last_updated": "2026-06-19T17:24:38+10:00",
+  "last_updated": "2026-06-20T10:20:31+10:00",
   "prediction_batch": {
     "round": 15,
     "roundname": "Round 15"
   },
   "games": [
     {
-      "filename": "round15_adelaide_vs_melbourne.csv",
-      "home": "Adelaide",
-      "away": "Melbourne",
-      "round": "Round 15",
-      "venue": "Adelaide Oval",
-      "predicted_at": "2026-06-19T17:24:36+10:00"
-    },
-    {
-      "filename": "round15_collingwood_vs_port_adelaide.csv",
-      "home": "Collingwood",
-      "away": "Port Adelaide",
-      "round": "Round 15",
-      "venue": "M.C.G.",
-      "predicted_at": "2026-06-19T17:24:36+10:00"
-    },
-    {
       "filename": "round15_gold_coast_vs_hawthorn.csv",
       "home": "Gold Coast",
       "away": "Hawthorn",
       "round": "Round 15",
       "venue": "Carrara",
-      "predicted_at": "2026-06-19T17:24:36+10:00"
+      "predicted_at": "2026-06-19T17:24:36+10:00",
+      "match_date": "2026-06-19T19:40:00"
+    },
+    {
+      "filename": "round15_adelaide_vs_melbourne.csv",
+      "home": "Adelaide",
+      "away": "Melbourne",
+      "round": "Round 15",
+      "venue": "Adelaide Oval",
+      "predicted_at": "2026-06-20T10:20:09+10:00",
+      "match_date": "2026-06-20T13:15:00"
     },
     {
       "filename": "round15_gws_vs_carlton.csv",
@@ -35,7 +29,17 @@
       "away": "Carlton",
       "round": "Round 15",
       "venue": "Sydney Showground",
-      "predicted_at": "2026-06-19T17:24:36+10:00"
+      "predicted_at": "2026-06-20T10:20:09+10:00",
+      "match_date": "2026-06-20T16:15:00"
+    },
+    {
+      "filename": "round15_collingwood_vs_port_adelaide.csv",
+      "home": "Collingwood",
+      "away": "Port Adelaide",
+      "round": "Round 15",
+      "venue": "M.C.G.",
+      "predicted_at": "2026-06-20T10:20:09+10:00",
+      "match_date": "2026-06-20T19:35:00"
     },
     {
       "filename": "round15_richmond_vs_north_melbourne.csv",
@@ -43,7 +47,8 @@
       "away": "North Melbourne",
       "round": "Round 15",
       "venue": "M.C.G.",
-      "predicted_at": "2026-06-19T17:24:36+10:00"
+      "predicted_at": "2026-06-20T10:20:09+10:00",
+      "match_date": "2026-06-21T13:10:00"
     },
     {
       "filename": "round15_st_kilda_vs_western_bulldogs.csv",
@@ -51,7 +56,8 @@
       "away": "Western Bulldogs",
       "round": "Round 15",
       "venue": "Docklands",
-      "predicted_at": "2026-06-19T17:24:36+10:00"
+      "predicted_at": "2026-06-20T10:20:09+10:00",
+      "match_date": "2026-06-21T15:15:00"
     }
   ]
 }
